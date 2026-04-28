@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Lato:wght@300;400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 215 35% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 35% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 35% 15%;
+
+    --primary: 211 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 207 90% 60%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 35% 15%;
+
+    --muted: 210 30% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 71% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 28% 88%;
+    --input: 214 28% 88%;
+    --ring: 211 100% 45%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 215 45% 17%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 211 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 40% 22%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 215 35% 25%;
+    --sidebar-ring: 211 100% 55%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(211 100% 45%), hsl(199 89% 55%));
+    --gradient-soft: linear-gradient(135deg, hsl(210 40% 98%), hsl(210 60% 95%));
+    --shadow-card: 0 1px 3px 0 hsl(215 35% 15% / 0.06), 0 1px 2px -1px hsl(215 35% 15% / 0.04);
+    --shadow-elevated: 0 10px 30px -10px hsl(211 100% 45% / 0.18);
+  }
+
+  .dark {
+    --background: 215 40% 10%;
+    --foreground: 210 40% 96%;
+    --card: 215 38% 13%;
+    --card-foreground: 210 40% 96%;
+    --popover: 215 38% 13%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 211 100% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 30% 18%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 215 30% 18%;
+    --muted-foreground: 215 16% 65%;
+    --accent: 199 89% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 30% 22%;
+    --input: 215 30% 22%;
+    --ring: 211 100% 55%;
+    --sidebar-background: 215 45% 12%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 211 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 40% 18%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 215 35% 20%;
+    --sidebar-ring: 211 100% 55%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Lato', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .gradient-primary { background: var(--gradient-primary); }
+  .gradient-soft { background: var(--gradient-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+}
