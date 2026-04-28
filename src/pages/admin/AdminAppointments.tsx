@@ -87,6 +87,17 @@ interface Appt {
 const DOCTOR = clinicDetails.doctor_name;
 const CLINIC = clinicDetails.clinic_name;
 
+/* ONLY DATE FORMAT UPDATED */
+const formatIndianDate = (date: string) => {
+  if (!date) return "—";
+
+  const parts = date.split("-");
+  if (parts.length !== 3) return date;
+
+  const [year, month, day] = parts;
+  return `${day}/${month}/${year.slice(2)}`;
+};
+
 export default function AdminAppointments() {
   const [items, setItems] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +113,6 @@ export default function AdminAppointments() {
 
   const [deleting, setDeleting] = useState<Appt | null>(null);
 
-  // LIVE LISTENER (No Refresh Needed)
   useEffect(() => {
     if (!isFirebaseConfigured) {
       setLoading(false);
@@ -200,7 +210,6 @@ export default function AdminAppointments() {
         doctor: DOCTOR,
         clinic: CLINIC,
       }),
-
       rescheduled: buildRescheduleBody({
         patientName: a.patientName,
         date,
@@ -208,7 +217,6 @@ export default function AdminAppointments() {
         location: a.hospitalLocation ?? "",
         clinic: CLINIC,
       }),
-
       cancelled: buildCancelBody({
         patientName: a.patientName,
         clinic: CLINIC,
@@ -221,11 +229,9 @@ export default function AdminAppointments() {
         to_name: a.patientName,
         subject: subjects[kind],
         message: bodies[kind],
-
         appointment_date: date,
         appointment_time: time,
         location: a.hospitalLocation ?? "",
-
         doctor_name: clinicDetails.doctor_name,
         clinic_name: clinicDetails.clinic_name,
         clinic_phone: clinicDetails.clinic_phone,
@@ -233,12 +239,11 @@ export default function AdminAppointments() {
         clinic_email: clinicDetails.clinic_email,
         clinic_website: clinicDetails.clinic_website,
         clinic_address: clinicDetails.clinic_address,
-
         status: kind,
       });
 
       toast.success("Email sent successfully");
-    } catch (error) {
+    } catch {
       toast.error("Email failed");
     }
   };
@@ -292,8 +297,8 @@ export default function AdminAppointments() {
       kind === "confirmed"
         ? confirmationMessage(DOCTOR)
         : kind === "rescheduled"
-          ? rescheduleMessage(date, time, DOCTOR)
-          : cancelMessage(DOCTOR);
+        ? rescheduleMessage(date, time, DOCTOR)
+        : cancelMessage(DOCTOR);
 
     window.open(whatsappLink(a.patientPhone, msg), "_blank");
   };
@@ -304,10 +309,15 @@ export default function AdminAppointments() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Appointments</h1>
-            <p className="text-muted-foreground mt-1">Manage, confirm, reschedule, and cancel patient appointments.</p>
+            <p className="text-muted-foreground mt-1">
+              Manage, confirm, reschedule, and cancel patient appointments.
+            </p>
           </div>
+
           {!isEmailConfigured && (
-            <p className="text-xs text-muted-foreground">EmailJS not configured — emails will be logged.</p>
+            <p className="text-xs text-muted-foreground">
+              EmailJS not configured — emails will be logged.
+            </p>
           )}
         </div>
 
@@ -315,11 +325,24 @@ export default function AdminAppointments() {
           <CardContent className="p-4 grid gap-3 md:grid-cols-4">
             <div className="relative">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search name, email, phone…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input
+                className="pl-9"
+                placeholder="Search name, email, phone…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-            <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
+
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
@@ -329,11 +352,18 @@ export default function AdminAppointments() {
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
+
             <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger><SelectValue placeholder="Location" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Location" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All locations</SelectItem>
-                {locations.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                {locations.map((l) => (
+                  <SelectItem key={l} value={l}>
+                    {l}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </CardContent>
@@ -352,45 +382,81 @@ export default function AdminAppointments() {
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
-                {loading && <tr><td colSpan={6} className="py-10 text-center text-muted-foreground">Loading…</td></tr>}
-                {!loading && filtered.length === 0 && (
-                  <tr><td colSpan={6} className="py-12 text-center text-muted-foreground">
-                    <CalendarCheck className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                    No appointments match your filters.
-                  </td></tr>
+                {loading && (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-muted-foreground">
+                      Loading…
+                    </td>
+                  </tr>
                 )}
+
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                      <CalendarCheck className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      No appointments match your filters.
+                    </td>
+                  </tr>
+                )}
+
                 {filtered.map((a) => (
-                  <tr key={a.id} className="border-b border-border/60 hover:bg-muted/30">
+                  <tr
+                    key={a.id}
+                    className="border-b border-border/60 hover:bg-muted/30"
+                  >
                     <td className="py-3 px-4 font-medium">{a.patientName}</td>
+
                     <td className="py-3 px-4 text-xs">
                       <div>{a.patientEmail}</div>
-                      <div className="text-muted-foreground">{a.patientPhone}</div>
+                      <div className="text-muted-foreground">
+                        {a.patientPhone}
+                      </div>
                     </td>
-                    <td className="py-3 px-4">{a.appointmentDate} <span className="text-muted-foreground">@ {a.appointmentTime}</span></td>
-                    <td className="py-3 px-4">{a.hospitalLocation ?? "—"}</td>
-                    <td className="py-3 px-4"><StatusBadge status={a.status ?? "pending"} /></td>
+
+                    {/* ONLY THIS DATE DISPLAY UPDATED */}
+                    <td className="py-3 px-4">
+                      {formatIndianDate(a.appointmentDate)}{" "}
+                      <span className="text-muted-foreground">
+                        @ {a.appointmentTime}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-4">
+                      {a.hospitalLocation ?? "—"}
+                    </td>
+
+                    <td className="py-3 px-4">
+                      <StatusBadge status={a.status ?? "pending"} />
+                    </td>
+
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1 justify-end flex-wrap">
                         <Button size="sm" variant="ghost" title="WhatsApp" onClick={() => openWhatsApp(a, a.status === "cancelled" ? "cancelled" : a.status === "rescheduled" ? "rescheduled" : "confirmed")}>
                           <MessageCircle className="h-4 w-4 text-success" />
                         </Button>
+
                         <Button size="sm" variant="ghost" title="Email" onClick={() => sendEmailFor(a, "confirmed")}>
                           <Mail className="h-4 w-4 text-primary" />
                         </Button>
+
                         {a.status !== "confirmed" && (
                           <Button size="sm" variant="ghost" title="Confirm" onClick={() => onConfirm(a)}>
                             <CheckCircle2 className="h-4 w-4 text-success" />
                           </Button>
                         )}
+
                         <Button size="sm" variant="ghost" title="Reschedule" onClick={() => { setEditing(a); setEditDate(a.appointmentDate); setEditTime(a.appointmentTime); }}>
                           <Pencil className="h-4 w-4 text-accent" />
                         </Button>
+
                         {a.status !== "cancelled" && (
                           <Button size="sm" variant="ghost" title="Cancel" onClick={() => onCancel(a)}>
                             <XCircle className="h-4 w-4 text-warning" />
                           </Button>
                         )}
+
                         <Button size="sm" variant="ghost" title="Delete" onClick={() => setDeleting(a)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -408,14 +474,27 @@ export default function AdminAppointments() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reschedule appointment</DialogTitle>
-            <DialogDescription>Update date and time. The patient will be notified by email.</DialogDescription>
+            <DialogDescription>
+              Update date and time. The patient will be notified by email.
+            </DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-3">
-            <div className="space-y-2"><Label>Date</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Time</Label><Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} /></div>
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Time</Label>
+              <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
+            </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
             <Button onClick={onSaveReschedule}>Save & Notify</Button>
           </DialogFooter>
         </DialogContent>
@@ -425,11 +504,19 @@ export default function AdminAppointments() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete appointment?</AlertDialogTitle>
-            <AlertDialogDescription>This action is permanent and cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This action is permanent and cannot be undone.
+            </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={onDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
