@@ -2,6 +2,8 @@ import emailjs from "@emailjs/browser";
 
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
+const TEMPLATE_RESCHEDULE_ID = import.meta.env
+  .VITE_EMAILJS_TEMPLATE_RESCHEDULE as string | undefined;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
 
 export const isEmailConfigured = Boolean(
@@ -30,6 +32,17 @@ export interface AppointmentEmailParams {
   status?: string;
 }
 
+/* DATE FORMAT DD/MM/YY */
+function formatIndianDate(date?: string) {
+  if (!date) return "";
+
+  const parts = date.split("-");
+  if (parts.length !== 3) return date;
+
+  const [year, month, day] = parts;
+  return `${day}/${month}/${year.slice(2)}`;
+}
+
 export async function sendAppointmentEmail(
   params: AppointmentEmailParams
 ) {
@@ -39,13 +52,15 @@ export async function sendAppointmentEmail(
       return { ok: false, stub: true };
     }
 
+    const formattedDate = formatIndianDate(params.appointment_date);
+
     const payload = {
       to_email: params.to_email || "",
       to_name: params.to_name || "",
       subject: params.subject || "",
       message: params.message || "",
 
-      appointment_date: params.appointment_date || "",
+      appointment_date: formattedDate,
       appointment_time: params.appointment_time || "",
       location: params.location || "",
 
@@ -61,11 +76,20 @@ export async function sendAppointmentEmail(
       status: params.status || "",
     };
 
+    let selectedTemplate = TEMPLATE_ID!;
+
+    if (
+      params.status === "rescheduled" &&
+      TEMPLATE_RESCHEDULE_ID
+    ) {
+      selectedTemplate = TEMPLATE_RESCHEDULE_ID;
+    }
+
     console.log("[EmailJS] Sending payload:", payload);
 
     const response = await emailjs.send(
       SERVICE_ID!,
-      TEMPLATE_ID!,
+      selectedTemplate,
       payload,
       {
         publicKey: PUBLIC_KEY!,
@@ -100,7 +124,7 @@ export function buildConfirmationBody(o: {
 
 Your appointment has been successfully confirmed.
 
-Date: ${o.date}
+Date: ${formatIndianDate(o.date)}
 Time: ${o.time}
 Location: ${o.location}
 Doctor: ${o.doctor}
@@ -122,7 +146,7 @@ export function buildRescheduleBody(o: {
 
 Your appointment has been rescheduled.
 
-New Date: ${o.date}
+New Date: ${formatIndianDate(o.date)}
 New Time: ${o.time}
 Location: ${o.location}
 

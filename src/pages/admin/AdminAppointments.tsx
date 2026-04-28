@@ -247,15 +247,25 @@ export default function AdminAppointments() {
       toast.error("Email failed");
     }
   };
-
   const onConfirm = async (a: Appt) => {
     await updateStatus(a, "confirmed");
     await sendEmailFor(a, "confirmed");
+
+    openWhatsApp(a, "confirmed", {
+      date: a.appointmentDate,
+      time: a.appointmentTime,
+    });
+
+    toast.success("Appointment confirmed");
   };
 
   const onCancel = async (a: Appt) => {
     await updateStatus(a, "cancelled");
     await sendEmailFor(a, "cancelled");
+
+    openWhatsApp(a, "cancelled");
+
+    toast.success("Appointment cancelled");
   };
 
   const onSaveReschedule = async () => {
@@ -267,12 +277,17 @@ export default function AdminAppointments() {
       status: "rescheduled",
     });
 
-    toast.success("Appointment rescheduled");
-
     await sendEmailFor(editing, "rescheduled", {
       date: editDate,
       time: editTime,
     });
+
+    openWhatsApp(editing, "rescheduled", {
+      date: editDate,
+      time: editTime,
+    });
+
+    toast.success("Appointment rescheduled");
 
     setEditing(null);
   };
@@ -280,9 +295,14 @@ export default function AdminAppointments() {
   const onDelete = async () => {
     if (!deleting) return;
 
-    await deleteDoc(doc(db, "appointments", deleting.id));
-    toast.success("Appointment deleted");
-    setDeleting(null);
+    try {
+      await deleteDoc(doc(db, "appointments", deleting.id));
+      toast.success("Appointment deleted");
+    } catch {
+      toast.error("Failed to delete appointment");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const openWhatsApp = (
@@ -293,13 +313,14 @@ export default function AdminAppointments() {
     const rawDate = overrides?.date ?? a.appointmentDate;
     const date = formatIndianDate(rawDate);
     const time = overrides?.time ?? a.appointmentTime;
+    const location = a.hospitalLocation ?? "";
 
     const msg =
       kind === "confirmed"
-        ? confirmationMessage(DOCTOR)
+        ? confirmationMessage(DOCTOR, date, time, location)
         : kind === "rescheduled"
-        ? rescheduleMessage(date, time, DOCTOR)
-        : cancelMessage(DOCTOR);
+          ? rescheduleMessage(date, time, DOCTOR, location)
+          : cancelMessage(DOCTOR);
 
     window.open(whatsappLink(a.patientPhone, msg), "_blank");
   };
