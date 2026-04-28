@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Stethoscope, Loader2 } from "lucide-react";
+import {
+  Stethoscope,
+  Loader2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminLogin() {
@@ -14,8 +19,28 @@ export default function AdminLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const getFriendlyError = (err: any) => {
+    const code = err?.code || "";
+
+    switch (code) {
+      case "auth/user-not-found":
+        return "Email address not found.";
+      case "auth/wrong-password":
+        return "Incorrect password.";
+      case "auth/invalid-credential":
+        return "Invalid email or password.";
+      case "auth/invalid-email":
+        return "Invalid email address.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Please try again later.";
+      default:
+        return "Login failed. Please try again.";
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +58,7 @@ export default function AdminLogin() {
       toast.success("Welcome back");
       navigate("/admin/dashboard");
     } catch (err: any) {
-      setError(err?.message ?? "Login failed");
+      setError(getFriendlyError(err));
     } finally {
       setSubmitting(false);
     }
@@ -43,7 +68,7 @@ export default function AdminLogin() {
     setError(null);
 
     if (!email) {
-      setError("Enter your email above first.");
+      setError("Please enter your email first.");
       return;
     }
 
@@ -51,7 +76,7 @@ export default function AdminLogin() {
       await resetPassword(email);
       toast.success("Password reset email sent");
     } catch (err: any) {
-      toast.error(err?.message ?? "Could not send reset email");
+      toast.error("Could not send reset email.");
     }
   };
 
@@ -91,14 +116,31 @@ export default function AdminLogin() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
 
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-11"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPassword(!showPassword)
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {error && (
