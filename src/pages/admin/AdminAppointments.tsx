@@ -87,7 +87,6 @@ interface Appt {
 const DOCTOR = clinicDetails.doctor_name;
 const CLINIC = clinicDetails.clinic_name;
 
-/* ONLY DATE FORMAT UPDATED */
 const formatIndianDate = (date: string) => {
   if (!date) return "—";
 
@@ -192,7 +191,8 @@ export default function AdminAppointments() {
     kind: "confirmed" | "rescheduled" | "cancelled",
     overrides?: { date?: string; time?: string }
   ) => {
-    const date = overrides?.date ?? a.appointmentDate;
+    const rawDate = overrides?.date ?? a.appointmentDate;
+    const date = formatIndianDate(rawDate);
     const time = overrides?.time ?? a.appointmentTime;
 
     const subjects = {
@@ -290,7 +290,8 @@ export default function AdminAppointments() {
     kind: "confirmed" | "rescheduled" | "cancelled",
     overrides?: { date?: string; time?: string }
   ) => {
-    const date = overrides?.date ?? a.appointmentDate;
+    const rawDate = overrides?.date ?? a.appointmentDate;
+    const date = formatIndianDate(rawDate);
     const time = overrides?.time ?? a.appointmentTime;
 
     const msg =
@@ -415,7 +416,6 @@ export default function AdminAppointments() {
                       </div>
                     </td>
 
-                    {/* ONLY THIS DATE DISPLAY UPDATED */}
                     <td className="py-3 px-4">
                       {formatIndianDate(a.appointmentDate)}{" "}
                       <span className="text-muted-foreground">
