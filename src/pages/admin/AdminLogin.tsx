@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Stethoscope, Loader2, AlertCircle } from "lucide-react";
+import { Stethoscope, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminLogin() {
-  const { login, resetPassword, configured } = useAuth();
+  const { login, resetPassword } = useAuth();
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -19,11 +20,14 @@ export default function AdminLogin() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     if (!email || !password) {
       setError("Please enter email and password.");
       return;
     }
+
     setSubmitting(true);
+
     try {
       await login(email, password);
       toast.success("Welcome back");
@@ -36,10 +40,13 @@ export default function AdminLogin() {
   };
 
   const onForgot = async () => {
+    setError(null);
+
     if (!email) {
       setError("Enter your email above first.");
       return;
     }
+
     try {
       await resetPassword(email);
       toast.success("Password reset email sent");
@@ -55,28 +62,43 @@ export default function AdminLogin() {
           <div className="inline-flex h-16 w-16 rounded-2xl gradient-primary items-center justify-center shadow-elevated mb-4">
             <Stethoscope className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Clinic Admin</h1>
-          <p className="text-muted-foreground mt-1">Dr. Muzammil Ambekar — secure portal</p>
+
+          <h1 className="text-3xl font-bold text-foreground">
+            Clinic Admin
+          </h1>
+
+          <p className="text-muted-foreground mt-1">
+            Dr. Muzammil Ambekar — secure portal
+          </p>
         </div>
 
         <Card className="shadow-elevated border-border/60">
           <CardContent className="p-6 sm:p-8">
-            {!configured && (
-              <div className="mb-5 flex gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm text-warning-foreground">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-warning" />
-                <span className="text-foreground">
-                  Firebase isn't configured. Add <code className="text-xs">VITE_FIREBASE_*</code> env vars to enable login.
-                </span>
-              </div>
-            )}
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@clinic.com" />
+
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="admin@clinic.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
 
               {error && (
@@ -85,11 +107,26 @@ export default function AdminLogin() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-11" disabled={submitting}>
-                {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing in…</> : "Sign In"}
+              <Button
+                type="submit"
+                className="w-full h-11"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
 
-              <button type="button" onClick={onForgot} className="w-full text-sm text-primary hover:underline">
+              <button
+                type="button"
+                onClick={onForgot}
+                className="w-full text-sm text-primary hover:underline"
+              >
                 Forgot your password?
               </button>
             </form>
