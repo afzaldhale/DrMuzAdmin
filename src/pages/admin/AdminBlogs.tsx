@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, FileText, Upload, Loader2 } from "lucide-react";
-import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, isFirebaseConfigured } from "@/lib/firebase";
 import { toast } from "sonner";
@@ -21,14 +21,42 @@ interface Blog {
   category: string;
   imageUrl?: string;
   status: "draft" | "published";
-  createdAt?: any;
+  slug?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
 }
 
 const empty: Omit<Blog, "id"> = { title: "", content: "", category: "", imageUrl: "", status: "draft" };
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getFirebaseErrorMessage(error: unknown, fallback: string) {
+  const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (code === "permission-denied") return "You do not have permission to access blogs.";
+  if (code === "unauthenticated") return "Your admin session has expired. Please sign in again.";
+  if (code === "failed-precondition") return "Unable to load blogs. A Firestore index may be required.";
+  if (code === "unavailable" || code === "network-request-failed") return "Unable to reach Firebase. Please try again.";
+  return getErrorMessage(error, fallback);
+}
+
+function generateSlug(title: string) {
+  return title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function getCreatedAtTime(value: unknown) {
+  if (value && typeof value === "object" && "toMillis" in value && typeof value.toMillis === "function") {
+    return value.toMillis();
+  }
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "string" || typeof value === "number") return new Date(value).getTime();
+  return 0;
+}
 
 export default function AdminBlogs() {
   const [items, setItems] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Blog | null>(null);
   const [form, setForm] = useState<Omit<Blog, "id">>(empty);
   const [uploading, setUploading] = useState(false);
@@ -36,12 +64,24 @@ export default function AdminBlogs() {
   const [deleting, setDeleting] = useState<Blog | null>(null);
 
   const load = async () => {
-    if (!isFirebaseConfigured) { setLoading(false); return; }
+    if (!isFirebaseConfigured) {
+      setError("Firebase is not configured.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
-      const snap = await getDocs(query(collection(db, "blogs"), orderBy("createdAt", "desc"))).catch(() => getDocs(collection(db, "blogs")));
-      setItems(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
-    } finally { setLoading(false); }
+      const snap = await getDocs(collection(db, "blogs"));
+      const blogs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Blog, "id">) }));
+      setItems(blogs.sort((a, b) => getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt)));
+    } catch (loadError) {
+      console.error("Failed to load blogs", loadError);
+      setError(getFirebaseErrorMessage(loadError, "Unable to load blogs. Please try again."));
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 
@@ -57,7 +97,7 @@ export default function AdminBlogs() {
       const url = await getDownloadURL(r);
       setForm((f) => ({ ...f, imageUrl: url }));
       toast.success("Image uploaded");
-    } catch (e: any) { toast.error(e?.message ?? "Upload failed"); }
+    } catch (error) { toast.error(getFirebaseErrorMessage(error, "Upload failed")); }
     finally { setUploading(false); }
   };
 
@@ -66,24 +106,31 @@ export default function AdminBlogs() {
     if (!form.title.trim()) return toast.error("Title is required");
     setSaving(true);
     try {
-      const data = { ...form, status: status ?? form.status };
+      const data = { ...form, slug: generateSlug(form.title), status: status ?? form.status };
       if (editing) {
-        await updateDoc(doc(db, "blogs", editing.id), data as any);
+        await updateDoc(doc(db, "blogs", editing.id), { ...data, updatedAt: serverTimestamp() });
         toast.success("Blog updated");
       } else {
-        await addDoc(collection(db, "blogs"), { ...data, createdAt: serverTimestamp() });
+        const timestamp = serverTimestamp();
+        await addDoc(collection(db, "blogs"), { ...data, createdAt: timestamp, updatedAt: timestamp });
         toast.success("Blog created");
       }
-      setEditing(null); setForm(empty); load();
-    } catch (e: any) { toast.error(e?.message ?? "Save failed"); }
+      setEditing(null); setForm(empty); await load();
+    } catch (error) { toast.error(getFirebaseErrorMessage(error, "Save failed")); }
     finally { setSaving(false); }
   };
 
   const onDelete = async () => {
     if (!deleting) return;
-    await deleteDoc(doc(db, "blogs", deleting.id));
-    toast.success("Blog deleted");
-    setDeleting(null); load();
+    try {
+      await deleteDoc(doc(db, "blogs", deleting.id));
+      toast.success("Blog deleted");
+      setDeleting(null);
+      await load();
+    } catch (error) {
+      console.error("Failed to delete blog", error);
+      toast.error(getFirebaseErrorMessage(error, "Delete failed"));
+    }
   };
 
   const showForm = editing !== null || form !== empty;
@@ -106,7 +153,13 @@ export default function AdminBlogs() {
               </thead>
               <tbody>
                 {loading && <tr><td colSpan={4} className="py-10 text-center text-muted-foreground">Loading…</td></tr>}
-                {!loading && items.length === 0 && (
+                {!loading && error && (
+                  <tr><td colSpan={4} className="py-12 text-center text-destructive">
+                    <p>{error}</p>
+                    <Button variant="outline" size="sm" className="mt-3" onClick={load}>Retry</Button>
+                  </td></tr>
+                )}
+                {!loading && !error && items.length === 0 && (
                   <tr><td colSpan={4} className="py-12 text-center text-muted-foreground">
                     <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />No blogs yet. Create your first article.
                   </td></tr>
