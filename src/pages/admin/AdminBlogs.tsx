@@ -85,7 +85,7 @@ export default function AdminBlogs() {
   };
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm(empty); };
+  const openCreate = () => { setEditing(null); setForm({ ...empty }); };
   const openEdit = (b: Blog) => { setEditing(b); const { id, ...rest } = b; setForm(rest); };
 
   const onUpload = async (file: File) => {
